@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="ja">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>標準作業組み合わせ表 - ALMANI</title>
+    <link rel="stylesheet" href="/std-work.css" />
+</head>
+
+<body>
+
+    <!-- Header（index.html寄せ） -->
+    <header class="sw-header">
+        <div class="sw-header-inner">
+            <div style="display:flex; align-items:center; gap:10px;">
+                <button id="backBtn" class="sw-btn" type="button">← 戻る</button>
+                <span class="sw-title">標準作業組み合わせ表</span>
+            </div>
+            <!-- 右側：何も置かない（印刷ボタン削除） -->
+            <div></div>
+        </div>
+    </header>
+
+    <main class="sw-main">
+
+        <!-- 上部：工程名 / 作業名のみ -->
+        <div class="sw-topbar">
+            <div class="chip">
+                <span class="label">工程名</span>
+                <span id="topProcess" class="val"></span>
+            </div>
+            <div class="chip">
+                <span class="label">作業名</span>
+                <span id="topElement" class="val"></span>
+            </div>
+        </div>
+
+        <!-- 統合テーブル（同じ行に作業名＋チャート） -->
+        <section class="sw-body">
+            <div class="sw-one">
+                <table class="sw-one-table" id="oneTable">
+                    <thead>
+                        <tr>
+                            <th class="c-no">No.</th>
+                            <th class="c-work">作業名</th>
+                            <th class="c-man">手作業(秒)</th>
+                            <th class="c-auto">自動(秒)</th>
+                            <th class="c-walk">歩行(秒)</th>
+                            <th class="c-chart">
+                                <div class="scale" id="scaleRow"></div>
+                            </th>
+                        </tr>
+                    </thead>
+
+                    <tbody id="oneTbody"></tbody>
+
+                    <tfoot>
+                        <tr>
+                            <td colspan="2" class="sum-label">合計</td>
+                            <td id="sumManual" class="sum"></td>
+                            <td id="sumAuto" class="sum"></td>
+                            <td id="sumWalk" class="sum"></td>
+                            <td class="chart-foot">
+                                <div class="legend">
+                                    <span class="lg-line manual"></span><span class="lg-txt">手作業</span>
+                                    <span class="lg-line auto"></span><span class="lg-txt">自動</span>
+                                    <span class="lg-txt sep">|</span>
+                                    <span class="lg-txt">歩行</span>
+                                </div>
+                            </td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </section>
+
+    </main>
+
+    <script src="/std-work.js"></script>
+    <script>
+        document.getElementById("backBtn")?.addEventListener("click", () => {
+            history.back();
+        });
+    </script>
+
+</body>
+
+</html>

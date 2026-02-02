@@ -1,0 +1,296 @@
+/* std-work.css */
+/* 統合テーブル + チャート列に「1枚のSVG」を重ねる方式（UIをindex.html寄せ） */
+
+:root {
+    --fg: #111;
+    --muted: #666;
+    --bg: #fff;
+
+    --lavender: #E6E6FA;
+    --lavender-border: #d6d6ef;
+    --cherry: #de3163;
+
+    --header-h: 56px;
+    --gutter: 16px;
+
+    /* axis */
+    --sec-max: 180;
+    --px-per-sec: 8;
+    --chart-w: calc(var(--sec-max) * var(--px-per-sec) * 1px);
+
+    /* row */
+    --row-h: 36px;
+
+    /* borders */
+    --outer-border: 2px solid #000;
+    --inner-border: 1px solid #000;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    color: var(--fg);
+    background: var(--bg);
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+/* ===== header（index.html寄せ） ===== */
+.sw-header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: var(--header-h);
+    background: var(--lavender);
+    border-bottom: 1px solid var(--lavender-border);
+    display: flex;
+    align-items: center;
+    z-index: 100;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, .10);
+}
+
+.sw-header-inner {
+    width: 100%;
+    padding: 0 var(--gutter);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.sw-title {
+    font-size: 20px;
+    font-weight: 900;
+    letter-spacing: .04em;
+}
+
+.sw-btn {
+    height: 38px;
+    padding: 0 12px;
+    border: 1px solid rgba(0, 0, 0, .2);
+    border-radius: 10px;
+    background: rgba(255, 255, 255, .7);
+    cursor: pointer;
+}
+
+.sw-btn:hover {
+    background: #fff;
+}
+
+.sw-btn:active {
+    transform: translateY(1px);
+}
+
+/* ===== main ===== */
+.sw-main {
+    padding: var(--gutter);
+    padding-top: calc(var(--header-h) + var(--gutter));
+    display: grid;
+    gap: 12px;
+}
+
+/* ===== top info (工程名/作業名だけ) ===== */
+.sw-topbar {
+    border: 1px solid rgba(0, 0, 0, .12);
+    border-radius: 12px;
+    background: var(--lavender);
+    padding: 10px 12px;
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.sw-topbar .label {
+    font-weight: 900;
+    margin-right: 6px;
+}
+
+.sw-topbar .val {
+    font-weight: 700;
+}
+
+.sw-topbar .chip {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+/* ===== unified table wrapper ===== */
+.sw-one {
+    position: relative;
+    /* ★チャート重ねの基準 */
+    overflow: auto;
+}
+
+/* ===== unified table ===== */
+.sw-one-table {
+    border-collapse: collapse;
+    border: var(--outer-border);
+    background: #fff;
+    table-layout: fixed;
+
+    width: calc(44px + 320px + 90px + 90px + 90px + var(--chart-w));
+}
+
+.sw-one-table th,
+.sw-one-table td {
+    border: var(--inner-border);
+    font-size: 13px;
+    vertical-align: middle;
+    padding: 0 8px;
+    background: #fff;
+}
+
+.sw-one-table thead th {
+    background: var(--lavender);
+    font-weight: 900;
+    height: 42px;
+}
+
+/* columns */
+.c-no {
+    width: 44px;
+    text-align: center;
+}
+
+.c-work {
+    width: 320px;
+}
+
+.c-man,
+.c-auto,
+.c-walk {
+    width: 90px;
+    text-align: center;
+}
+
+.c-chart {
+    width: var(--chart-w);
+    padding: 0;
+}
+
+/* row height fixed */
+.sw-one-table tbody tr {
+    height: var(--row-h);
+}
+
+.sw-one-table tbody td {
+    line-height: var(--row-h);
+    white-space: nowrap;
+}
+
+/* work cell: main line + auto names (red) */
+.sw-one-table tbody td.c-work-td {
+    white-space: normal;
+    line-height: 1.25;
+    padding-top: 6px;
+    padding-bottom: 6px;
+}
+
+.auto-name {
+    color: var(--cherry);
+    font-weight: 900;
+}
+
+/* ===== scale in header cell ===== */
+.c-chart .scale {
+    position: relative;
+    width: var(--chart-w);
+    height: 24px;
+    margin: 0;
+    padding: 0;
+    background: transparent;
+}
+
+.c-chart .scale .tick {
+    position: absolute;
+    top: 0;
+    transform: translateX(-50%);
+    font-weight: 900;
+    line-height: 24px;
+    color: #000;
+}
+
+.c-chart .scale .tick.zero {
+    transform: translateX(0);
+}
+
+/* ===== chart column cells (tbody) ===== */
+.sw-one-table tbody td.c-chart {
+    padding: 0;
+    background: transparent;
+}
+
+/* ===== overlay stage (JS inserts) ===== */
+.chart-stage {
+    position: absolute;
+    pointer-events: none;
+    z-index: 5;
+}
+
+.chart-stage svg {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+}
+
+/* footer */
+.sw-one-table tfoot td {
+    background: #fafaff;
+    font-weight: 900;
+    padding: 6px 8px;
+    line-height: 1.2;
+}
+
+.sum-label {
+    text-align: right;
+}
+
+.sum {
+    text-align: center;
+}
+
+.chart-foot {
+    padding: 6px 8px;
+}
+
+.legend {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 800;
+    white-space: nowrap;
+}
+
+.lg-line.manual {
+    width: 90px;
+    height: 10px;
+    background: var(--lavender);
+    border: 1px solid #000;
+}
+
+.lg-line.auto {
+    width: 90px;
+    border-top: 2px dashed #000;
+    height: 0;
+}
+
+.lg-txt.sep {
+    margin: 0 6px;
+}
+
+/* print */
+@media print {
+    .sw-header {
+        display: none;
+    }
+
+    .sw-main {
+        padding-top: 0;
+    }
+}

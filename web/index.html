@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="ja">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>ALMANI（アルマニ）</title>
+    <link rel="stylesheet" href="/styles.css" />
+</head>
+
+<body>
+
+    <!-- ヘッダー -->
+    <header class="header">
+        <div class="header-inner">
+            <span class="header-title">ALMANI（アルマニ）</span>
+
+            <button id="menuBtn" class="menu-btn" type="button" aria-label="メニュー" aria-haspopup="true"
+                aria-expanded="false">
+                <span class="menu-icon" aria-hidden="true"></span>
+            </button>
+        </div>
+    </header>
+
+    <!-- 右ドロワー -->
+    <div id="drawerBackdrop" class="drawer-backdrop" hidden></div>
+
+    <aside id="drawer" class="drawer" aria-hidden="true">
+        <div class="drawer-header">
+            <div class="drawer-title">メニュー</div>
+            <button id="drawerClose" class="drawer-close" type="button" aria-label="閉じる">×</button>
+        </div>
+
+        <nav class="drawer-nav">
+            <button class="drawer-item" type="button" data-action="new-project">新規プロジェクト</button>
+            <button class="drawer-item" type="button" data-action="open-project">プロジェクトを開く</button>
+            <button class="drawer-item" type="button" data-action="save-project">プロジェクトを保存</button>
+            <button class="drawer-item" type="button" data-action="analyze">動画分析モード</button>
+            <button class="drawer-item" type="button" data-action="playback">動画再生モード</button>
+            <button class="drawer-item" type="button" data-action="std-work">標準作業組み合わせ表を作成</button>
+        </nav>
+    </aside>
+
+    <!-- メイン -->
+    <main class="main">
+        <!-- 左：プレーヤー -->
+        <section class="player">
+            <input id="currentPath" class="current-path" type="text" value="" placeholder="（未選択）" disabled />
+
+            <div class="meta-fields">
+                <input id="processName" class="meta-input" type="text" placeholder="工程名" disabled />
+                <input id="elementWorkName" class="meta-input" type="text" placeholder="要素作業名" disabled />
+            </div>
+
+            <div class="video-wrap">
+                <!-- controls無し＋CSS pointer-events:none で標準操作禁止 -->
+                <video id="v" class="video" playsinline></video>
+                <div id="timeOverlay" class="time-overlay">00:00</div>
+            </div>
+
+            <div id="workSubtitle" class="work-subtitle">（作業名）</div>
+
+            <!-- 操作ボタン -->
+            <div class="control-row">
+                <button class="ctrl-btn" type="button" data-action="play">再生</button>
+                <button class="ctrl-btn" type="button" data-action="pause">一時停止</button>
+                <button id="lapBtn" class="ctrl-btn" type="button" data-action="lap">LAP</button>
+                <button class="ctrl-btn" type="button" data-action="restart">始めから再生</button>
+            </div>
+
+            <!-- ★追加：音量（デフォルトミュート） -->
+            <div class="volume-row">
+                <button id="muteBtn" class="ctrl-btn" type="button">ミュート</button>
+                <input id="volumeRange" class="volume-range" type="range" min="0" max="100" value="0" />
+                <span id="volumeLabel" class="volume-label">0%</span>
+            </div>
+
+            <!-- 再生速度 -->
+            <div class="speed-row">
+                <button class="speed-btn" type="button" data-speed="2.0">2.0倍速</button>
+                <button class="speed-btn" type="button" data-speed="1.5">1.5倍速</button>
+                <button class="speed-btn active" type="button" data-speed="1.0">1.0倍速</button>
+                <button class="speed-btn" type="button" data-speed="0.5">0.5倍速</button>
+                <button class="speed-btn" type="button" data-speed="0.2">0.2倍速</button>
+            </div>
+
+            <div id="msg" class="msg"></div>
+        </section>
+
+        <!-- 右：LAP履歴 -->
+        <section class="right-panel">
+            <div id="lapTitle" class="panel-title">作業手順書（クリックするとジャンプ）</div>
+
+            <div class="table-wrap">
+                <table class="lap-table">
+                    <thead>
+                        <tr>
+                            <th class="col-no">No</th>
+                            <th>作業名</th>
+                            <th class="col-cat">区分</th>
+                            <th class="col-sec">秒</th>
+                            <th>急所</th>
+                            <th>急所の理由</th>
+                            <th class="col-time">Time</th>
+                        </tr>
+                    </thead>
+                    <tbody id="lapBody"></tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+
+    <!-- LAP入力モーダル（現状未使用でも残す） -->
+    <div id="lapModalBackdrop" class="modal-backdrop" hidden></div>
+
+    <div id="lapModal" class="modal" hidden aria-hidden="true">
+        <div class="modal-header">
+            <div class="modal-title">LAP入力</div>
+            <button id="lapCancelBtn" class="modal-close" type="button" aria-label="閉じる">×</button>
+        </div>
+
+        <div class="modal-body">
+            <div class="modal-row">
+                <label class="modal-label">区分</label>
+                <select id="lapCategory" class="modal-input">
+                    <option value="手作業">手作業</option>
+                    <option value="歩行">歩行</option>
+                    <option value="自動">自動</option>
+                </select>
+            </div>
+
+            <div class="modal-row">
+                <label class="modal-label">作業名</label>
+                <input id="lapWork" class="modal-input" type="text" placeholder="例：部品取付" />
+            </div>
+
+            <div class="modal-row">
+                <label class="modal-label">急所</label>
+                <input id="lapKey" class="modal-input" type="text" placeholder="例：位置決め" />
+            </div>
+
+            <div class="modal-row">
+                <label class="modal-label">急所の理由</label>
+                <input id="lapReason" class="modal-input" type="text" placeholder="例：ズレると不良" />
+            </div>
+
+            <div class="modal-row">
+                <label class="modal-label">秒</label>
+                <input id="lapDeltaSec" class="modal-input" type="text" readonly />
+            </div>
+
+            <div class="modal-row">
+                <label class="modal-label">Time</label>
+                <input id="lapTimeText" class="modal-input" type="text" readonly />
+            </div>
+
+            <div class="modal-actions">
+                <button id="lapSaveBtn" class="modal-primary" type="button">追加</button>
+                <button id="lapCancelBtn2" class="modal-secondary" type="button">キャンセル</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="/app.js"></script>
+</body>
+
+</html>

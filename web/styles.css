@@ -1,0 +1,693 @@
+:root {
+    --fg: #111;
+    --muted: #666;
+    --err: #b00020;
+    --ok: #0b6;
+    --bg: #fff;
+    --lavender: #E6E6FA;
+
+    /* accent */
+    --cherry: #de3163;
+
+    /* layout */
+    --gutter: 16px;
+    --header-h: 56px;
+
+    /* left column sizing (stable) */
+    --left-min: 520px;
+    --left-max: 760px;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+    color: var(--fg);
+    background: var(--bg);
+}
+
+/* =========================================================
+   Header (FIXED)
+   ========================================================= */
+.header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+
+    height: var(--header-h);
+    background: var(--lavender);
+    border-bottom: 1px solid #d6d6ef;
+
+    display: flex;
+    align-items: center;
+
+    z-index: 100;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.10);
+}
+
+.header-inner {
+    position: relative;
+    /* menu-btn の基準 */
+    width: 100%;
+    padding: 0 var(--gutter);
+    display: flex;
+    align-items: center;
+}
+
+/* タイトル */
+.header-title {
+    font-size: 20px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+}
+
+/* ===== ヘッダーモード表示 ===== */
+.header-mode-badge {
+    margin-left: 12px;
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 700;
+    background: #ddd;
+    color: #333;
+}
+
+.header-mode-badge.analysis {
+    background: var(--cherry);
+    color: #fff;
+}
+
+/* Hamburger（右端固定） */
+.menu-btn {
+    position: absolute;
+    right: var(--gutter);
+    top: 50%;
+    transform: translateY(-50%);
+
+    width: 44px;
+    height: 36px;
+    border: 1px solid rgba(0, 0, 0, 0.15);
+    background: rgba(255, 255, 255, 0.6);
+    border-radius: 10px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.menu-btn:active {
+    transform: translateY(-50%) translateY(1px);
+}
+
+.menu-icon {
+    position: relative;
+    width: 18px;
+    height: 2px;
+    background: #333;
+    border-radius: 2px;
+}
+
+.menu-icon::before,
+.menu-icon::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    width: 18px;
+    height: 2px;
+    background: #333;
+    border-radius: 2px;
+}
+
+.menu-icon::before {
+    top: -6px;
+}
+
+.menu-icon::after {
+    top: 6px;
+}
+
+/* =========================================================
+   Main layout
+   ========================================================= */
+.main {
+    padding: var(--gutter);
+    padding-top: calc(var(--header-h) + var(--gutter));
+    display: grid;
+    grid-template-columns: minmax(var(--left-min), min(50vw, var(--left-max))) 1fr;
+    column-gap: var(--gutter);
+    align-items: start;
+}
+
+/* Left: player */
+.player {
+    grid-column: 1;
+    display: grid;
+    gap: 10px;
+    min-width: 0;
+}
+
+/* Right: panel */
+.right-panel {
+    grid-column: 2;
+    min-width: 0;
+    display: grid;
+    gap: 10px;
+    align-content: start;
+}
+
+/* =========================================================
+   Panel title
+   ========================================================= */
+.panel-title {
+    font-weight: 700;
+    padding: 10px 12px;
+    border: 1px solid rgba(0, 0, 0, 0.12);
+    border-radius: 12px;
+    background: #e6e6fa;
+}
+
+/* 分析中はチェリー */
+.panel-title.analysis {
+    background: var(--cherry) !important;
+    border-color: var(--cherry) !important;
+    color: #fff;
+}
+
+/* =========================================================
+   Path display
+   ========================================================= */
+.current-path {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid rgba(0, 0, 0, 0.12);
+    border-radius: 12px;
+    background: #f2f2ff;
+    color: #222;
+    font-size: 13px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.current-path:disabled {
+    opacity: 1;
+    /* 文字が薄くならない */
+    -webkit-text-fill-color: #222;
+    cursor: not-allowed;
+}
+
+/* =========================================================
+   Video + overlay
+   ========================================================= */
+.video-wrap {
+    position: relative;
+    width: 100%;
+}
+
+.video {
+    width: 100%;
+    max-height: 520px;
+    background: #000;
+    border-radius: 12px;
+    pointer-events: none;
+    user-select: none;
+}
+
+.time-overlay {
+    position: absolute;
+    right: 10px;
+    bottom: 10px;
+    z-index: 5;
+
+    padding: 6px 10px;
+    border-radius: 10px;
+    background: rgba(0, 0, 0, 0.60);
+    color: #fff;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 13px;
+
+    pointer-events: none;
+}
+
+/* 作業字幕 */
+.work-subtitle {
+    width: 100%;
+    padding: 8px 12px;
+    border-radius: 10px;
+    background: rgba(0, 0, 0, 0.65);
+    color: #fff;
+    font-size: 14px;
+    font-weight: 700;
+    text-align: center;
+
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    user-select: none;
+}
+
+/* =========================================================
+   Control buttons
+   ========================================================= */
+.control-row,
+.speed-row {
+    width: 100%;
+    display: grid;
+    gap: 10px;
+}
+
+.control-row {
+    grid-template-columns: repeat(4, 1fr);
+}
+
+.speed-row {
+    grid-template-columns: repeat(5, 1fr);
+}
+
+.ctrl-btn,
+.speed-btn {
+    height: 44px;
+    border-radius: 12px;
+    border: 1px solid rgba(0, 0, 0, 0.2);
+    background: #fff;
+    font-size: 14px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.ctrl-btn:hover,
+.speed-btn:hover {
+    background: #f2f2ff;
+}
+
+.ctrl-btn:active,
+.speed-btn:active {
+    transform: translateY(1px);
+}
+
+.speed-btn.active {
+    background: #dcd7ff;
+    border-color: rgba(106, 90, 205, 0.8);
+    font-weight: 700;
+}
+
+/* LAPボタン：非アクティブ */
+#lapBtn:disabled {
+    background: #eee;
+    border-color: rgba(0, 0, 0, 0.15);
+    color: #999;
+    cursor: not-allowed;
+}
+
+/* LAPボタン：アクティブ（チェリー） */
+#lapBtn.lap-active {
+    background: var(--cherry);
+    border-color: var(--cherry);
+    color: #fff;
+    font-weight: 700;
+}
+
+/* =========================================================
+   Message
+   ========================================================= */
+.msg {
+    width: 100%;
+    margin-top: 2px;
+    font-size: 14px;
+    white-space: pre-wrap;
+}
+
+.msg.err {
+    color: var(--err);
+}
+
+.msg.ok {
+    color: var(--ok);
+}
+
+/* =========================================================
+   LAP table
+   ========================================================= */
+.table-wrap {
+    border: 1px solid rgba(0, 0, 0, 0.12);
+    border-radius: 10px;
+    overflow: auto;
+    background: #fff;
+    max-height: 800px;
+    min-width: 0;
+}
+
+.lap-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.lap-table thead th {
+    text-align: left;
+    font-weight: 700;
+    font-size: 14px;
+    padding: 6px 10px;
+    background: #e6e6fa;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.10);
+    position: sticky;
+    top: 0;
+    z-index: 1;
+}
+
+.lap-table tbody td {
+    font-size: 14px;
+    padding: 6px 10px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    white-space: nowrap;
+    vertical-align: middle;
+}
+
+/* hover */
+.lap-table tbody tr:hover td {
+    background: #f6f6ff;
+    cursor: pointer;
+}
+
+/* active row */
+.lap-table tbody tr.active-row td {
+    background: #bfff00;
+}
+
+/* ===== column widths ===== */
+.lap-table thead th.col-no,
+.lap-table tbody td:nth-child(1) {
+    width: 32px;
+}
+
+.lap-table thead th.col-cat,
+.lap-table tbody td:nth-child(3) {
+    width: 100px;
+}
+
+.lap-table thead th.col-sec,
+.lap-table tbody td:nth-child(4) {
+    width: 42px;
+}
+
+.lap-table thead th.col-time,
+.lap-table tbody td:nth-child(7) {
+    width: 52px;
+}
+
+.lap-table tbody td:nth-child(6) {
+    max-width: 140px;
+}
+
+.lap-table tbody td:nth-child(2) {
+    width: auto;
+    min-width: 320px;
+    white-space: normal;
+    word-break: break-word;
+}
+
+.lap-table tbody td:nth-child(2),
+.lap-table tbody td:nth-child(5),
+.lap-table tbody td:nth-child(6) {
+    white-space: normal;
+    word-break: break-word;
+}
+
+/* 入力欄 */
+.cell-input,
+.cell-select {
+    width: 100%;
+    font-size: 14px;
+    padding: 4px 6px;
+    border: 1px solid rgba(0, 0, 0, 0.15);
+    border-radius: 6px;
+    background: #fff;
+    font-family: inherit;
+}
+
+.cell-input::placeholder {
+    color: #999;
+}
+
+.cell-input:focus,
+.cell-select:focus {
+    outline: none;
+    border-color: rgba(106, 90, 205, 0.9);
+    box-shadow: 0 0 0 2px rgba(106, 90, 205, 0.15);
+}
+
+.cell-select {
+    cursor: pointer;
+}
+
+/* =========================================================
+   Drawer
+   ========================================================= */
+.drawer-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.35);
+    z-index: 999;
+}
+
+.drawer {
+    position: fixed;
+    top: 0;
+    right: 0;
+    height: 100vh;
+    width: 320px;
+    max-width: 86vw;
+    background: #fff;
+    border-left: 1px solid rgba(0, 0, 0, 0.12);
+    z-index: 1000;
+    transform: translateX(100%);
+    transition: transform 180ms ease-out;
+    display: flex;
+    flex-direction: column;
+}
+
+.drawer.open {
+    transform: translateX(0);
+}
+
+.drawer-header {
+    padding: 14px 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.drawer-title {
+    font-weight: 700;
+}
+
+.drawer-close {
+    width: 36px;
+    height: 36px;
+    border: 1px solid rgba(0, 0, 0, 0.15);
+    background: #fff;
+    border-radius: 10px;
+    cursor: pointer;
+    font-size: 18px;
+    line-height: 1;
+}
+
+.drawer-nav {
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.drawer-item {
+    text-align: left;
+    padding: 10px 12px;
+    border: 1px solid rgba(0, 0, 0, 0.12);
+    border-radius: 12px;
+    background: #fff;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.drawer-item:hover {
+    background: #f2f2ff;
+}
+
+/* ===== ドロワー：現在モードのハイライト ===== */
+
+/* 分析モード（チェリー） */
+.drawer-item.active-mode {
+    background: var(--cherry);
+    border-color: var(--cherry);
+    color: #fff;
+    font-weight: 700;
+}
+
+/* 再生モード（ラベンダー） */
+.drawer-item.active-playback {
+    background: var(--lavender);
+    border-color: #d6d6ef;
+    color: #333;
+    font-weight: 700;
+}
+
+/*  =========================================================
+    Responsive
+    ========================================================= */
+@media (max-width: 980px) {
+    .main {
+        grid-template-columns: 1fr;
+    }
+
+    .right-panel {
+        grid-column: 1;
+    }
+}
+
+/* ===== 工程名 / 要素作業名 ===== */
+.meta-fields {
+    display: grid;
+    gap: 6px;
+}
+
+.meta-input {
+    width: 100%;
+    padding: 8px 10px;
+    border-radius: 10px;
+    border: 1px solid rgba(0, 0, 0, 0.15);
+    font-size: 14px;
+    background: #fff;
+}
+
+.meta-input::placeholder {
+    color: #999;
+}
+
+/* 分析モード以外（disabled） */
+.meta-input:disabled {
+    background: #f5f5f5;
+    color: #777;
+    cursor: not-allowed;
+}
+
+/* =========================================
+   再生モードでも文字色を黒に固定
+   ========================================= */
+
+/* 工程名 / 要素作業名 */
+.meta-input,
+.meta-input:disabled {
+    color: #000 !important;
+    opacity: 1 !important;
+    /* disabled時に薄くならない */
+    -webkit-text-fill-color: #000;
+    /* Safari/WebView対策 */
+}
+
+/* LAPテーブル内の入力欄 */
+.lap-table .cell-input,
+.lap-table .cell-input:disabled {
+    color: #000 !important;
+    opacity: 1 !important;
+    -webkit-text-fill-color: #000;
+}
+
+/* LAPテーブル内のセレクト */
+.lap-table .cell-select,
+.lap-table .cell-select:disabled {
+    color: #000 !important;
+    opacity: 1 !important;
+    -webkit-text-fill-color: #000;
+}
+
+/* テーブルの表示テキスト（No / 秒 / Time など） */
+.lap-table td,
+.lap-table th {
+    color: #000;
+}
+
+/* disabled時の「グレー背景」だけ残す（文字は黒） */
+.meta-input:disabled,
+.lap-table .cell-input:disabled,
+.lap-table .cell-select:disabled {
+    background-color: #f5f5f5;
+    /* 今まで通り */
+    cursor: default;
+}
+
+/* =========================================
+   ブランク（空入力）のみ薄いグレー表示
+   ========================================= */
+
+/* input / select 共通：中身がある時は黒 */
+.meta-input,
+.lap-table .cell-input,
+.lap-table .cell-select {
+    color: #000;
+    -webkit-text-fill-color: #000;
+}
+
+/* placeholder（未入力時のガイド文字） */
+.meta-input::placeholder,
+.lap-table .cell-input::placeholder {
+    color: #bbb;
+    -webkit-text-fill-color: #bbb;
+}
+
+/* value が空の input（placeholder表示時）を薄いグレーに */
+.meta-input:placeholder-shown,
+.lap-table .cell-input:placeholder-shown {
+    color: #bbb !important;
+    -webkit-text-fill-color: #bbb !important;
+}
+
+/* disabled でも文字色は制御する */
+.meta-input:disabled,
+.lap-table .cell-input:disabled,
+.lap-table .cell-select:disabled {
+    opacity: 1;
+}
+
+/* select の未選択（value="" 想定） */
+.lap-table .cell-select option[value=""] {
+    color: #bbb;
+}
+
+/* テーブル表示セル（No / 秒 / Time）
+   中身が無いセルだけ薄くする */
+.lap-table td:empty {
+    color: #bbb;
+}
+
+.volume-row {
+    width: 100%;
+    display: grid;
+    grid-template-columns: 140px 1fr 60px;
+    gap: 10px;
+    align-items: center;
+}
+
+.volume-range {
+    width: 100%;
+}
+
+.volume-label {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    text-align: right;
+}
+
+.cell-view {
+    display: none;
+    /* JSで再生モード時に表示 */
+    width: 100%;
+    padding: 4px 6px;
+    white-space: normal;
+    word-break: break-word;
+}
