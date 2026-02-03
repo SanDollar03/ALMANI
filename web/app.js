@@ -935,11 +935,19 @@ async function onOpenProject() {
 // ================================
 function openStdWork() {
     normalizeLapsTimeAndDuration();
+
+    // ★追加：動画の長さ（秒）
+    const videoDurationSec = Number.isFinite(video.duration) ? Math.ceil(video.duration) : 0;
+
     const payload = {
         createdAt: new Date().toISOString(),
         processName: projectMeta.processName || (processNameInput?.value || ""),
         elementWorkName: projectMeta.elementWorkName || (elementWorkNameInput?.value || ""),
         videoPath: getPathText(),
+
+        // ★追加
+        videoDurationSec,
+
         laps: laps.map(x => ({
             sec: x.sec ?? 0,
             dt: x.dt ?? 0,
@@ -949,6 +957,7 @@ function openStdWork() {
             reason: x.reason ?? ""
         }))
     };
+
     localStorage.setItem("almani_stdwork_payload", JSON.stringify(payload));
     location.href = "/std-work";
 }
