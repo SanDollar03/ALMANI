@@ -1,33 +1,25 @@
 // std-work.js
 // 統合テーブル + チャート列に「1枚のSVG」を重ねる方式（最新版）
 //
-// UI要件
-// - 上部は工程名/作業名のみ（std-work.html側に #topProcess/#topElement を用意）
-// - 「機械」→「自動」
-// - 自動は直前の手作業と同じ行に「赤文字で改行表示」
-// - 自動の線は手作業四角の前面に重なる破線（同じ行y）
-// 描画要件
-// - 0はチャート枠の左端（x=0固定）
-// - 方眼：縦線のみ（1秒点線、10秒実線）
-// - 横線は全て点線（行境界）
-// - 歩行がある場合：手作業四角の右下 → 次の手作業四角の左上 を波線で連結
-// - 歩行が無い場合：同じ角同士を実線で連結
-//
-// データ要件
-// - 最初の手作業から開始
-// - 歩行は直近手作業へ合算（連続歩行も合算）
-// - 0秒手作業は省略
+// ★横軸可変仕様（追加）
+// - 動画長に応じて横軸最大値を可変：axisMax = ceil(videoSec / 200) * 200
+// - 1メモリ（最小目盛り）秒数：secPerTick = axisMax / 200
+//   例）150秒 → max200 / tick1秒、300秒 → max400 / tick2秒
+// - バー（手作業/自動/歩行）も同一スケールで同期して伸縮
 
 (function () {
     "use strict";
 
     // =========================
-    // Config
+    // Axis Config (NEW)
     // =========================
-    const PX_PER_SEC = 8;
-    const MAX_AXIS_SEC = 180;
-    const SCALE_STEP = 10;
+    const DIV_COUNT = 200;           // 目盛り本数（固定）
+    const BASE_PX_PER_TICK = 8;      // 1メモリの幅(px)（固定）
+    const FALLBACK_DURATION_SEC = 180;
 
+    // =========================
+    // Shapes / Style Config
+    // =========================
     // 手作業四角
     const MANUAL_H = 12;
     const MANUAL_FILL = "#E6E6FA";
@@ -46,10 +38,10 @@
     const WALK_AMP = 2.2;
     const WALK_WAVE_LEN = 5;
 
-    // grid
-    const GRID_1S_COLOR = "#d0d0d0";   // 1秒点線
-    const GRID_10S_COLOR = "#666";     // 10秒実線
-    const GRID_H_COLOR = "#d9d9d9";    // 横点線
+    // grid colors
+    const GRID_MINOR_COLOR = "#d0d0d0"; // 最小目盛り点線
+    const GRID_MAJOR_COLOR = "#666";    // 10メモリごと実線
+    const GRID_H_COLOR = "#d9d9d9";     // 横点線
 
     // takt
     const DEFAULT_TAKT_SEC = 0; // 0なら総時間
@@ -66,21 +58,30 @@
         return;
     }
 
-    // CSS変数をJSに一致（ズレ防止）
-    document.documentElement.style.setProperty("--sec-max", String(MAX_AXIS_SEC));
-    document.documentElement.style.setProperty("--px-per-sec", String(PX_PER_SEC));
-
     // top display（工程名/作業名）
     setText("topProcess", payload.processName || "");
     setText("topElement", payload.elementWorkName || "");
 
-    // build rows
+    // build rows（手作業行の集合へ正規化）
     const rows = buildRows(payload.laps);
 
-    // scale
-    renderScale();
+    // total time (for fallback)
+    const totalSec = rows.reduce((a, r) => a + r.manualSec + r.walkSec + r.autoSec, 0);
 
-    // takt
+    // ★動画長（秒）を優先して軸決定（無ければ totalSec）
+    const videoSec = toNum(payload.videoDurationSec);
+    const durationBase = firstNonZero(videoSec, totalSec, FALLBACK_DURATION_SEC);
+
+    // ★axis params
+    const axis = computeAxis(durationBase);
+
+    // CSS変数をJSに一致（ズレ防止）
+    applyAxisCssVars(axis);
+
+    // scale
+    renderScale(axis);
+
+    // takt preference
     const taktFromLS = toNum(localStorage.getItem("almani_stdwork_takt_sec"));
     const taktFromPayload = toNum(payload.taktSec);
     const taktPref = firstNonZero(taktFromLS, taktFromPayload, DEFAULT_TAKT_SEC);
@@ -91,29 +92,56 @@
     requestAnimationFrame(() => {
         const stage = ensureStage();
         layoutStage(stage);
-        drawAll(stage, rows, taktPref);
+        drawAll(stage, rows, taktPref, axis);
 
         window.addEventListener("resize", () => {
             layoutStage(stage);
-            drawAll(stage, rows, taktPref);
+            drawAll(stage, rows, taktPref, axis);
         });
     });
 
     // =========================
-    // Scale (0..180 exact x)
+    // Axis helpers
     // =========================
-    function renderScale() {
+    function computeAxis(durationSec) {
+        const dur = clampInt(durationSec, 1, 24 * 3600);
+
+        // 200刻みで切り上げ（例：150→200 / 300→400）
+        const axisMaxSec = Math.max(DIV_COUNT, Math.ceil(dur / DIV_COUNT) * DIV_COUNT);
+
+        // 1メモリが何秒か（例：max200→1 / max400→2）
+        const secPerTick = axisMaxSec / DIV_COUNT; // 整数になる想定
+
+        // 秒→px変換（目盛り幅を一定にするため、px/secは可変）
+        const pxPerSec = BASE_PX_PER_TICK / secPerTick;
+
+        // grid step
+        const minorStepSec = secPerTick;        // 最小目盛り
+        const majorStepSec = secPerTick * 10;   // 10メモリごと（ラベル/太線）
+
+        return { axisMaxSec, secPerTick, pxPerSec, minorStepSec, majorStepSec };
+    }
+
+    function applyAxisCssVars(axis) {
+        document.documentElement.style.setProperty("--sec-max", String(axis.axisMaxSec));
+        document.documentElement.style.setProperty("--px-per-sec", String(axis.pxPerSec));
+    }
+
+    // =========================
+    // Scale (0..axisMax)
+    // =========================
+    function renderScale(axis) {
         const scaleRow = document.getElementById("scaleRow");
         if (!scaleRow) return;
 
         scaleRow.innerHTML = "";
-        scaleRow.style.width = `${MAX_AXIS_SEC * PX_PER_SEC}px`;
+        scaleRow.style.width = `${axis.axisMaxSec * axis.pxPerSec}px`;
 
-        for (let t = 0; t <= MAX_AXIS_SEC; t += SCALE_STEP) {
+        for (let t = 0; t <= axis.axisMaxSec; t += axis.majorStepSec) {
             const d = document.createElement("div");
             d.className = "tick" + (t === 0 ? " zero" : "");
             d.textContent = String(t);
-            d.style.left = `${t * PX_PER_SEC}px`;
+            d.style.left = `${t * axis.pxPerSec}px`;
             scaleRow.appendChild(d);
         }
     }
@@ -211,7 +239,7 @@
     // =========================
     // Draw (grid + shapes + connectors + takt)
     // =========================
-    function drawAll(stage, rows, taktPref) {
+    function drawAll(stage, rows, taktPref, axis) {
         const svg = stage.querySelector("svg");
         const tbody = document.getElementById("oneTbody");
         if (!svg || !tbody) return;
@@ -233,21 +261,20 @@
             yMid.push(((r.top + r.bottom) / 2) - tbodyRect.top);
         }
 
-        // total operator timeline for takt default（手作業+歩行+自動も含めて並ぶ想定）
+        // total operator timeline for takt default
         const totalSec = rows.slice(0, N).reduce((a, r) => a + r.manualSec + r.walkSec + r.autoSec, 0);
-        const taktSec = clampNum((taktPref > 0 ? taktPref : totalSec), 0, MAX_AXIS_SEC);
+        const taktSec = clampNum((taktPref > 0 ? taktPref : totalSec), 0, axis.axisMaxSec);
 
         // 1) grid
-        drawGrid(svg, chartW, chartH);
+        drawGrid(svg, chartW, chartH, axis);
 
         // 2) shapes
-        // operator time t: 手作業→自動→歩行 の順で進める（表示の並びが自然）
         let t = 0;
 
-        // manual rect positions for connector endpoints
-        const manualInfo = []; // {rowIdx, x0, x1, yTop, yBot, hasWalk}
+        // manual rect positions for connectors
+        const manualInfo = []; // {x0,x1,yTop,yBot,walkSec}
 
-        // draw manual first (back)
+        // manual rects (back)
         for (let i = 0; i < N; i++) {
             const r = rows[i];
             const ym = yMid[i];
@@ -255,10 +282,9 @@
             const manualStart = t;
             const manualEnd = t + r.manualSec;
 
-            const x0 = manualStart * PX_PER_SEC;
-            const x1 = manualEnd * PX_PER_SEC;
+            const x0 = manualStart * axis.pxPerSec;
+            const x1 = manualEnd * axis.pxPerSec;
 
-            // manual rect
             addRect(svg, x0, ym - MANUAL_H / 2, x1 - x0, MANUAL_H, {
                 fill: MANUAL_FILL,
                 stroke: MANUAL_STROKE,
@@ -266,31 +292,26 @@
             });
 
             manualInfo.push({
-                rowIdx: i,
                 x0, x1,
                 yTop: ym - MANUAL_H / 2,
                 yBot: ym + MANUAL_H / 2,
                 walkSec: r.walkSec
             });
 
-            // advance time: manual
+            // advance time: manual → auto → walk
             t += r.manualSec;
-
-            // advance time: auto (timeline consumes)
             t += r.autoSec;
-
-            // advance time: walk (timeline consumes)
             t += r.walkSec;
         }
 
-        // connectors (① and ④) between consecutive manual rows (since all rows are manual-rows by definition)
+        // connectors
         for (let i = 0; i < N - 1; i++) {
             const a = manualInfo[i];
             const b = manualInfo[i + 1];
 
             const ax = a.x1;
-            const ay = a.yBot;      // right-bottom
-            const bx = b.x0;        // next left-top at its start time
+            const ay = a.yBot;   // right-bottom
+            const bx = b.x0;     // next left-top
             const by = b.yTop;
 
             if (a.walkSec > 0) {
@@ -304,53 +325,50 @@
             }
         }
 
-        // auto overlay (front): draw dashed lines on top of manual rects
-        // auto lines are drawn within the same row, starting immediately after manual in the timeline
+        // auto overlay (front)
         t = 0;
         for (let i = 0; i < N; i++) {
             const r = rows[i];
             const ym = yMid[i];
 
-            const manualStart = t;
-            const manualEnd = t + r.manualSec;
-
-            // auto begins right after manual (overlay “in front” visually)
+            const manualEnd = (t + r.manualSec);
             const autoStart = manualEnd;
             const autoEnd = autoStart + r.autoSec;
 
-            const x0 = autoStart * PX_PER_SEC;
-            const x1 = autoEnd * PX_PER_SEC;
+            const x0 = autoStart * axis.pxPerSec;
+            const x1 = autoEnd * axis.pxPerSec;
 
             if (r.autoSec > 0) {
                 addLine(svg, x0, ym, x1, ym, { w: AUTO_W, dash: AUTO_DASH, color: "#000" });
             }
 
-            // advance timeline
             t += r.manualSec + r.autoSec + r.walkSec;
         }
 
-        // 3) takt
-        const tx = taktSec * PX_PER_SEC;
+        // 3) takt line
+        const tx = taktSec * axis.pxPerSec;
         addLine(svg, tx, 0, tx, chartH, { w: 1.2, color: "red" });
     }
 
     // =========================
-    // Grid: vertical 1s dotted, 10s solid / horizontal dotted
+    // Grid:
+    // - 最小目盛り：secPerTick 秒ごと（点線）
+    // - 10メモリごと：実線
     // =========================
-    function drawGrid(svg, w, h) {
+    function drawGrid(svg, w, h, axis) {
         // vertical
-        for (let s = 0; s <= MAX_AXIS_SEC; s++) {
-            const x = s * PX_PER_SEC;
+        for (let s = 0; s <= axis.axisMaxSec; s += axis.minorStepSec) {
+            const x = s * axis.pxPerSec;
             if (x < 0 || x > w) continue;
 
-            if (s % 10 === 0) {
-                addLine(svg, x, 0, x, h, { w: 1.1, color: GRID_10S_COLOR });
+            if (s % axis.majorStepSec === 0) {
+                addLine(svg, x, 0, x, h, { w: 1.1, color: GRID_MAJOR_COLOR });
             } else {
-                addLine(svg, x, 0, x, h, { w: 0.8, color: GRID_1S_COLOR, dash: "1 4" });
+                addLine(svg, x, 0, x, h, { w: 0.8, color: GRID_MINOR_COLOR, dash: "1 4" });
             }
         }
 
-        // horizontal dotted
+        // horizontal dotted (row boundaries)
         const rowH = readCssPx("--row-h", 36);
         const n = Math.floor(h / rowH);
         for (let i = 0; i <= n; i++) {
