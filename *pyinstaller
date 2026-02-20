@@ -1,0 +1,29 @@
+配布形態
+
+  almani_build/
+  ├─ ALMANI.exe
+  ├─ web/
+  │  ├─ index.html
+  │  ├─ styles.css
+  │  ├─ app.js
+  │  ├─ std-work.html
+  │  ├─ std-work.css
+  │  └─ std-works.js
+  └─ README.txt（簡易操作説明）
+
+----------------------------------------------------------
+
+仮想環境でビルド専用環境を作る
+
+  python -m venv almani_build
+  almani_build\Scripts\activate
+  pip install flask pywebview pyinstaller
+
+----------------------------------------------------------
+
+ビルド時の正しい手順
+
+  cd python_venv
+  almani_build\Scripts\activate
+  cd almani
+  pyinstaller --onefile --windowed --name ALMANI app.py
