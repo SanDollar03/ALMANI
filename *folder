@@ -1,0 +1,10 @@
+almani/
+  app.py                # Flask + pywebview + CSV入出力 + /video Range配信
+  requirements.txt      # 依存
+  web/
+    index.html          # メインUI（動画 + LAP表 + ドロワーメニュー）
+    styles.css          # メインUIのスタイル
+    app.js              # メインUIのロジック（LAP, CSV, モード切替, ボリューム等）
+    std-work.html       # 標準作業組み合わせ表UI
+    std-work.css        # 同UIのスタイル
+    std-work.js         # 同UIの生成ロジック（SVGオーバレイ、可変軸）
