@@ -23,7 +23,7 @@
 
 ビルド時の正しい手順
 
-  cd python_venv
+  cd C:\Users\PJ\python\venv
   almani_build\Scripts\activate
   cd almani
   pyinstaller --onefile --windowed --name ALMANI app.py
